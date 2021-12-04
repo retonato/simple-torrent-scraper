@@ -1,0 +1,5 @@
+.idea/
+logs/
+results/
+venv/
+*.py[cod]
