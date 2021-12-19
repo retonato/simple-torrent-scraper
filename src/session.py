@@ -1,9 +1,10 @@
 """Code for starting libtorrent session"""
+# pylint: disable=c-extension-no-member
 import logging
 import pathlib
 from datetime import date, datetime, timedelta
 
-import libtorrent  # pylint: disable=import-error
+import libtorrent
 
 from src.settings import settings
 
