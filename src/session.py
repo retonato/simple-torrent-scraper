@@ -69,7 +69,6 @@ def start_libtorrent_session(info_hashes, stop):
             if info_hashes:
                 sha1 = info_hashes.pop()
             else:
-                stop.set()
                 break
             try:
                 lt_session.add_torrent(
@@ -85,6 +84,9 @@ def start_libtorrent_session(info_hashes, stop):
             except Exception as err:  # pylint: disable=broad-except
                 logging.error("Cannot add torrent %s, error: %s", sha1, err)
                 continue
+
+        if not lt_session.get_torrents():
+            stop.set()
 
         # Log the progress, reset counters
         logging.info(
