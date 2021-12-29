@@ -53,7 +53,12 @@ if __name__ == "__main__":
                 "%s info hashes remained (-%s)", len(info_hashes), filepath
             )
 
-    # Create libtorrent session
-    session.start_libtorrent_session(info_hashes, stop)
+    # Create libtorrent session, handle crashes by restarting it
+    while not stop.is_set():
+        try:
+            session.start_libtorrent_session(info_hashes, stop)
+        except:
+            logging.info("Libtorrent session stopped!")
+
     logging.info("Source file: %s", sys.argv[1])
     logging.info("Exiting!\n")

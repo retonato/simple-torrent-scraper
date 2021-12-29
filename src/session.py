@@ -11,11 +11,11 @@ from src.settings import settings
 
 def start_libtorrent_session(info_hashes, stop):
     """Start libtorrent session"""
+    counters = {"p_ok": [0, 0], "p_nok": [0, 0], "added": [0, 0]}
+
     # Load trackers and session config
     with open("trackers.txt", encoding="utf8") as source_file:
         trackers = [line.strip() for line in source_file.readlines()]
-    counters_all = {"p_ok": 0, "p_nok": 0, "added": 0}
-    counters = {"p_ok": 0, "p_nok": 0, "added": 0}
 
     # Start libtorrent session
     lt_session = libtorrent.session(settings)
@@ -55,14 +55,14 @@ def start_libtorrent_session(info_hashes, stop):
 
                 # Remove the torrent with files (if there are any)
                 lt_session.remove_torrent(torrent, lt_session.delete_files)
-                counters_all["p_ok"] += 1
-                counters["p_ok"] += 1
+                counters["p_ok"][0] += 1
+                counters["p_ok"][1] += 1
 
             elif t_age > timedelta(seconds=60 * 15):
                 # Remove the torrent with files (if there are any)
                 lt_session.remove_torrent(torrent, lt_session.delete_files)
-                counters_all["p_nok"] += 1
-                counters["p_nok"] += 1
+                counters["p_nok"][0] += 1
+                counters["p_nok"][1] += 1
 
         # Add new torrents to the session
         for _ in range(500 - len(lt_session.get_torrents())):
@@ -79,8 +79,8 @@ def start_libtorrent_session(info_hashes, stop):
                         "trackers": trackers,
                     }
                 )
-                counters["added"] += 1
-                counters_all["added"] += 1
+                counters["added"][0] += 1
+                counters["added"][1] += 1
             except Exception as err:  # pylint: disable=broad-except
                 logging.error("Cannot add torrent %s, error: %s", sha1, err)
                 continue
@@ -88,23 +88,23 @@ def start_libtorrent_session(info_hashes, stop):
         if not lt_session.get_torrents():
             stop.set()
 
-        # Log the progress, reset counters
+        # Log the progress, reset cycle counters
         logging.info(
             "%s processed ok, %s processed nok, %s added, %s remained",
-            counters["p_ok"],
-            counters["p_nok"],
-            counters["added"],
+            counters["p_ok"][0],
+            counters["p_nok"][0],
+            counters["added"][0],
             len(info_hashes),
         )
         for counter in counters:
-            counters[counter] = 0
+            counters[counter][0] = 0
 
         # Wait until the next check
         stop.wait(60)
 
     logging.info(
         "Total: %s processed ok, %s processed nok, %s added",
-        counters_all["p_ok"],
-        counters_all["p_nok"],
-        counters_all["added"],
+        counters["p_ok"][1],
+        counters["p_nok"][1],
+        counters["added"][1],
     )
