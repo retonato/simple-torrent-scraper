@@ -108,3 +108,7 @@ def start_libtorrent_session(info_hashes, stop):
         counters["p_nok"][1],
         counters["added"][1],
     )
+    logging.info(
+        "Success rate: %.2f%%",
+        counters["p_ok"][1] * 100 / (counters["added"][1] + 1),
+    )
