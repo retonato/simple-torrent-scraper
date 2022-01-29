@@ -57,8 +57,8 @@ if __name__ == "__main__":
     while not stop.is_set():
         try:
             session.start_libtorrent_session(info_hashes, stop)
-        except:
-            logging.info("Libtorrent session stopped!")
+        except Exception as err:  # pylint: disable=broad-except
+            logging.info("Libtorrent session stopped: %s", err)
 
     logging.info("Source file: %s", sys.argv[1])
     logging.info("Exiting!\n")

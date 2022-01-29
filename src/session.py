@@ -26,7 +26,7 @@ def start_libtorrent_session(info_hashes, stop):
     while not stop.is_set():
         # Check if some of active torrents have metadata
         for torrent in lt_session.get_torrents():
-            sha1 = torrent.info_hash().to_bytes().hex()
+            info_hash = torrent.info_hash().to_bytes().hex()
             t_added = datetime.fromtimestamp(torrent.status().added_time)
             t_age = datetime.now() - t_added
 
@@ -35,9 +35,9 @@ def start_libtorrent_session(info_hashes, stop):
                 filepath = pathlib.Path(
                     "results",
                     str(date.today())[:7],
-                    sha1[:2],
-                    sha1[2:4],
-                    f"{sha1}.torrent",
+                    info_hash[:2],
+                    info_hash[2:4],
+                    f"{info_hash}.torrent",
                 )
                 filepath.parent.mkdir(parents=True, exist_ok=True)
                 try:
@@ -50,7 +50,7 @@ def start_libtorrent_session(info_hashes, stop):
                     )
                 except Exception as err:  # pylint: disable=broad-except
                     logging.error(
-                        "Cannot save torrent %s, error: %s", sha1, err
+                        "Cannot save torrent %s, error: %s", info_hash, err
                     )
 
                 # Remove the torrent with files (if there are any)
@@ -67,14 +67,14 @@ def start_libtorrent_session(info_hashes, stop):
         # Add new torrents to the session
         for _ in range(500 - len(lt_session.get_torrents())):
             if info_hashes:
-                sha1 = info_hashes.pop()
+                info_hash = info_hashes.pop()
             else:
                 break
             try:
                 lt_session.add_torrent(
                     {
                         "file_priorities": [0] * 10000,
-                        "info_hashes": bytes.fromhex(sha1),
+                        "info_hashes": bytes.fromhex(info_hash),
                         "save_path": "/tmp",
                         "trackers": trackers,
                     }
@@ -82,7 +82,9 @@ def start_libtorrent_session(info_hashes, stop):
                 counters["added"][0] += 1
                 counters["added"][1] += 1
             except Exception as err:  # pylint: disable=broad-except
-                logging.error("Cannot add torrent %s, error: %s", sha1, err)
+                logging.error(
+                    "Cannot add torrent %s, error: %s", info_hash, err
+                )
                 continue
 
         if not lt_session.get_torrents():
@@ -96,8 +98,8 @@ def start_libtorrent_session(info_hashes, stop):
             counters["added"][0],
             len(info_hashes),
         )
-        for counter in counters:
-            counters[counter][0] = 0
+        for counter_group in counters.values():
+            counter_group[0] = 0
 
         # Wait until the next check
         stop.wait(60)
