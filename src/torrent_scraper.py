@@ -46,8 +46,9 @@ if __name__ == "__main__":
         with open(filepath, encoding="utf8") as source_file:
             already_found = set()
             for line in source_file:
-                if len(line.strip()) == 40:
-                    already_found.add(line.strip())
+                for field in line.split(","):
+                    if len(field.strip()) == 40:
+                        already_found.add(field.strip())
             info_hashes -= already_found
             logging.info(
                 "%s info hashes remained (-%s)", len(info_hashes), filepath
